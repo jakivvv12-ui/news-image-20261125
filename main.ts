@@ -38,27 +38,26 @@ const W = 1024;
 const H = 1024;
 
 // Newsprint palette: warm paper, near-black ink, restrained accent colours.
-const PAPER: RGB = [246, 241, 231];
-const INK: RGB = [25, 21, 18];
-const INK_SOFT: RGB = [74, 66, 58];
-const RED: RGB = [163, 30, 30];
-const NAVY: RGB = [29, 53, 87];
-const GOLD: RGB = [176, 132, 32];
-const TEAL: RGB = [32, 96, 96];
-const SKY: RGB = [214, 228, 236];
-const SEA: RGB = [58, 110, 140];
-const SAND: RGB = [226, 214, 188];
-const GREY: RGB = [148, 140, 128];
-const WHITE: RGB = [255, 255, 255];
+const PAPER = [246, 241, 231];
+const INK = [25, 21, 18];
+const INK_SOFT = [74, 66, 58];
+const RED = [163, 30, 30];
+const NAVY = [29, 53, 87];
+const GOLD = [176, 132, 32];
+const TEAL = [32, 96, 96];
+const SKY = [214, 228, 236];
+const SEA = [58, 110, 140];
+const SAND = [226, 214, 188];
+const GREY = [148, 140, 128];
+const WHITE = [255, 255, 255];
 
-type RGB = [number, number, number];
 
 // ---------------------------------------------------------------------------
 // 5x7 bitmap font. Every glyph is 7 rows of 5 bits ('1' = filled pixel).
 // Uppercase, lowercase, digits and the punctuation this page needs.
 // ---------------------------------------------------------------------------
 
-const GLYPHS: Record<string, string[]> = {
+const GLYPHS = {
   A: ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
   B: ["11110", "10001", "10001", "11110", "10001", "10001", "11110"],
   C: ["01110", "10001", "10000", "10000", "10000", "10001", "01110"],
@@ -145,9 +144,9 @@ const GLYPHS: Record<string, string[]> = {
 };
 
 // A glyph the font does not know renders as a blank (never crashes the run).
-const BLANK: string[] = ["00000", "00000", "00000", "00000", "00000", "00000", "00000"];
+const BLANK = ["00000", "00000", "00000", "00000", "00000", "00000", "00000"];
 
-function glyphFor(ch: string): string[] {
+function glyphFor(ch) {
   return GLYPHS[ch] ?? BLANK;
 }
 
@@ -156,18 +155,18 @@ function glyphFor(ch: string): string[] {
 // ---------------------------------------------------------------------------
 
 class Canvas {
-  readonly w: number;
-  readonly h: number;
-  private readonly px: Buffer; // 3 bytes per pixel, row-major, no alpha
+  w;
+  h;
+  px; // 3 bytes per pixel, row-major, no alpha
 
-  constructor(w: number, h: number, bg: RGB) {
+  constructor(w, h, bg) {
     this.w = w;
     this.h = h;
     this.px = Buffer.alloc(w * h * 3);
     this.fill(bg);
   }
 
-  fill(c: RGB): void {
+  fill(c) {
     for (let i = 0; i < this.w * this.h; i++) {
       this.px[i * 3] = c[0];
       this.px[i * 3 + 1] = c[1];
@@ -175,7 +174,7 @@ class Canvas {
     }
   }
 
-  set(x: number, y: number, c: RGB): void {
+  set(x, y, c) {
     if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
     const i = (y * this.w + x) * 3;
     this.px[i] = c[0];
@@ -183,7 +182,7 @@ class Canvas {
     this.px[i + 2] = c[2];
   }
 
-  rect(x: number, y: number, w: number, h: number, c: RGB): void {
+  rect(x, y, w, h, c) {
     const x0 = Math.max(0, x);
     const y0 = Math.max(0, y);
     const x1 = Math.min(this.w, x + w);
@@ -199,7 +198,7 @@ class Canvas {
   }
 
   // 1 px outline of a rectangle.
-  frame(x: number, y: number, w: number, h: number, c: RGB): void {
+  frame(x, y, w, h, c) {
     this.rect(x, y, w, 1, c);
     this.rect(x, y + h - 1, w, 1, c);
     this.rect(x, y, 1, h, c);
@@ -207,7 +206,7 @@ class Canvas {
   }
 
   // Bresenham line.
-  line(x0: number, y0: number, x1: number, y1: number, c: RGB): void {
+  line(x0, y0, x1, y1, c) {
     const dx = Math.abs(x1 - x0);
     const dy = -Math.abs(y1 - y0);
     const sx = x0 < x1 ? 1 : -1;
@@ -231,12 +230,12 @@ class Canvas {
   }
 
   // A 2 px thick line, drawn as two parallel 1 px lines.
-  thickLine(x0: number, y0: number, x1: number, y1: number, c: RGB): void {
+  thickLine(x0, y0, x1, y1, c) {
     this.line(x0, y0, x1, y1, c);
     this.line(x0, y0 + 1, x1, y1 + 1, c);
   }
 
-  circle(cx: number, cy: number, r: number, c: RGB): void {
+  circle(cx, cy, r, c) {
     if (r <= 0) return;
     for (let yy = -r; yy <= r; yy++) {
       const half = Math.floor(Math.sqrt(r * r - yy * yy));
@@ -246,7 +245,7 @@ class Canvas {
     }
   }
 
-  ring(cx: number, cy: number, r: number, c: RGB): void {
+  ring(cx, cy, r, c) {
     if (r <= 0) return;
     for (let a = 0; a < 360; a += 1) {
       const rad = (a * Math.PI) / 180;
@@ -255,7 +254,7 @@ class Canvas {
   }
 
   // Filled triangle.
-  triangle(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, c: RGB): void {
+  triangle(x0, y0, x1, y1, x2, y2, c) {
     const minX = Math.min(x0, x1, x2);
     const maxX = Math.max(x0, x1, x2);
     const minY = Math.min(y0, y1, y2);
@@ -273,7 +272,7 @@ class Canvas {
   }
 
   // Filled polygon (convex or concave) via the scanline / even-odd rule.
-  polygon(points: Array<[number, number]>, c: RGB): void {
+  polygon(points, c) {
     let minY = Infinity;
     let maxY = -Infinity;
     for (const [, y] of points) {
@@ -281,7 +280,7 @@ class Canvas {
       if (y > maxY) maxY = y;
     }
     for (let y = minY; y <= maxY; y++) {
-      const xs: number[] = [];
+      const xs = [];
       for (let i = 0; i < points.length; i++) {
         const [x0, y0] = points[i];
         const [x1, y1] = points[(i + 1) % points.length];
@@ -296,7 +295,7 @@ class Canvas {
     }
   }
 
-  raw(): Buffer {
+  raw() {
     return this.px;
   }
 }
@@ -306,12 +305,12 @@ class Canvas {
 // One glyph cell is 6*scale wide (5 px glyph + 1 px gap) and 7*scale tall.
 // ---------------------------------------------------------------------------
 
-function textWidth(text: string, scale: number): number {
+function textWidth(text, scale) {
   if (text.length === 0) return 0;
   return text.length * 6 * scale - scale; // no trailing gap after last glyph
 }
 
-function drawText(cv: Canvas, text: string, x: number, y: number, scale: number, c: RGB): void {
+function drawText(cv, text, x, y, scale, c) {
   let cx = x;
   for (const ch of text) {
     const g = glyphFor(ch);
@@ -327,14 +326,14 @@ function drawText(cv: Canvas, text: string, x: number, y: number, scale: number,
   }
 }
 
-function drawTextCentered(cv: Canvas, text: string, cx: number, y: number, scale: number, c: RGB): void {
+function drawTextCentered(cv, text, cx, y, scale, c) {
   drawText(cv, text, cx - Math.floor(textWidth(text, scale) / 2), y, scale, c);
 }
 
 // Greedy word wrap: returns lines that fit inside maxWidth px.
-function wrapText(text: string, maxWidth: number, scale: number): string[] {
+function wrapText(text, maxWidth, scale) {
   const words = text.split(" ");
-  const lines: string[] = [];
+  const lines = [];
   let cur = "";
   for (const word of words) {
     const trial = cur === "" ? word : cur + " " + word;
@@ -365,15 +364,15 @@ function wrapText(text: string, maxWidth: number, scale: number): string[] {
 
 // Draw a wrapped paragraph; returns the y just below the last line.
 function drawParagraph(
-  cv: Canvas,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  scale: number,
-  lineHeight: number,
-  c: RGB,
-): number {
+  cv,
+  text,
+  x,
+  y,
+  maxWidth,
+  scale,
+  lineHeight,
+  c,
+) {
   const lines = wrapText(text, maxWidth, scale);
   let yy = y;
   for (const line of lines) {
@@ -388,8 +387,8 @@ function drawParagraph(
 // Output is fully deterministic: zlib level 9, no timestamps anywhere.
 // ---------------------------------------------------------------------------
 
-const CRC_TABLE: number[] = (() => {
-  const table: number[] = [];
+const CRC_TABLE = (() => {
+  const table = [];
   for (let n = 0; n < 256; n++) {
     let c = n;
     for (let k = 0; k < 8; k++) {
@@ -400,7 +399,7 @@ const CRC_TABLE: number[] = (() => {
   return table;
 })();
 
-function crc32(buf: Buffer): number {
+function crc32(buf) {
   let c = 0xffffffff;
   for (let i = 0; i < buf.length; i++) {
     c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
@@ -408,7 +407,7 @@ function crc32(buf: Buffer): number {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-function pngChunk(type: string, data: Buffer): Buffer {
+function pngChunk(type, data) {
   const out = Buffer.alloc(12 + data.length);
   out.writeUInt32BE(data.length, 0);
   out.write(type, 4, "ascii");
@@ -418,7 +417,7 @@ function pngChunk(type: string, data: Buffer): Buffer {
   return out;
 }
 
-function encodePng(cv: Canvas): Buffer {
+function encodePng(cv) {
   const w = cv.w;
   const h = cv.h;
   const raw = cv.raw();
@@ -455,7 +454,7 @@ function encodePng(cv: Canvas): Buffer {
 // ---------------------------------------------------------------------------
 
 // Warship on the sea with a blast starburst above it.
-function drawShipScene(cv: Canvas, x: number, y: number, w: number, h: number): void {
+function drawShipScene(cv, x, y, w, h) {
   cv.rect(x, y, w, h, SKY);
   // Sun / sky band.
   cv.circle(x + w - 46, y + 34, 22, GOLD);
@@ -513,12 +512,12 @@ function drawShipScene(cv: Canvas, x: number, y: number, w: number, h: number): 
 
 // Skyscraper skyline strip: one tall tower with a smoke plume mid-facade.
 // Designed for a wide, short box (about 468 x 56).
-function drawTowerScene(cv: Canvas, x: number, y: number, w: number, h: number): void {
+function drawTowerScene(cv, x, y, w, h) {
   cv.rect(x, y, w, h, SKY);
   const ground = y + h - 8;
   cv.rect(x, ground, w, 8, SAND);
   // Low blocks flanking the tall tower.
-  const blocks: Array<[number, number, number]> = [
+  const blocks = [
     [x + 12, 30, 22],
     [x + 48, 22, 34],
     [x + 250, 40, 26],
@@ -556,7 +555,7 @@ function drawTowerScene(cv: Canvas, x: number, y: number, w: number, h: number):
 }
 
 // Microchip with circuit traces running across a wide, short strip.
-function drawChipScene(cv: Canvas, x: number, y: number, w: number, h: number): void {
+function drawChipScene(cv, x, y, w, h) {
   cv.rect(x, y, w, h, SAND);
   const s = Math.min(40, h - 10);
   const sx = x + 14;
@@ -588,7 +587,7 @@ function drawChipScene(cv: Canvas, x: number, y: number, w: number, h: number): 
 }
 
 // Padlock with a warning triangle — a breach, drawn as a symbol, in a strip.
-function drawLockScene(cv: Canvas, x: number, y: number, w: number, h: number): void {
+function drawLockScene(cv, x, y, w, h) {
   cv.rect(x, y, w, h, SKY);
   const cx = x + 34;
   const cy = y + Math.floor(h / 2) + 8;
@@ -614,7 +613,7 @@ function drawLockScene(cv: Canvas, x: number, y: number, w: number, h: number): 
 }
 
 // Oil tanker with naval mines in the water, drawn as a wide strip.
-function drawTankerScene(cv: Canvas, x: number, y: number, w: number, h: number): void {
+function drawTankerScene(cv, x, y, w, h) {
   cv.rect(x, y, w, h, SKY);
   // Sun haze.
   cv.circle(x + 30, y + 14, 10, GOLD);
@@ -637,7 +636,7 @@ function drawTankerScene(cv: Canvas, x: number, y: number, w: number, h: number)
   for (const [mx, my] of [
     [x + 300, seaTop + 9],
     [x + w - 40, seaTop + 9],
-  ] as Array<[number, number]>) {
+  ]) {
     cv.circle(mx, my, 6, INK);
     for (let a = 0; a < 8; a++) {
       const rad = (a * Math.PI) / 4;
@@ -650,21 +649,14 @@ function drawTankerScene(cv: Canvas, x: number, y: number, w: number, h: number)
 // Page layout: a one-page newspaper front page, 1024 x 1024.
 // ---------------------------------------------------------------------------
 
-interface Story {
-  kicker: string;
-  headline: string;
-  body: string;
-  scene: (cv: Canvas, x: number, y: number, w: number, h: number) => void;
-}
-
-const LEAD: Story = {
+const LEAD = {
   kicker: "WAR AT SEA - LIBYA AND THE BALTIC",
   headline: "UKRAINE SINKS RUSSIAN WARSHIP",
   body: "Kyiv says seven naval drones sank the corvette Merkury in Benghazi harbour and hit the cargo ship Angara, which it says carried weapons. A sanctioned Russian cargo ship, Sparta II, also caught fire after a drone strike in the Gulf of Finland. Norway urged caution.",
   scene: drawShipScene,
 };
 
-const STORIES: Story[] = [
+const STORIES = [
   {
     kicker: "MIDDLE EAST - SAUDI ARABIA",
     headline: "DRONE HITS RIYADH'S TALLEST TOWER",
@@ -697,7 +689,7 @@ const ALSO_TODAY =
 const SOURCES = "Sources: Reuters, AP, CNN, The Times, The Hindu - reported 25 November 2026";
 
 // Draw one of the four smaller story blocks (two-column rows).
-function drawStoryBlock(cv: Canvas, x: number, y: number, w: number, h: number, s: Story): void {
+function drawStoryBlock(cv, x, y, w, h, s) {
   drawText(cv, s.kicker, x, y, 2, RED);
   const lines = wrapText(s.headline, w, 3);
   let yy = y + 20;
@@ -709,7 +701,7 @@ function drawStoryBlock(cv: Canvas, x: number, y: number, w: number, h: number, 
   s.scene(cv, x, y + h - 56, w, 56);
 }
 
-function buildPage(): Canvas {
+function buildPage() {
   const cv = new Canvas(W, H, PAPER);
 
   // Outer double border.
@@ -765,7 +757,7 @@ function buildPage(): Canvas {
 // Entry point. Guard first: never write anywhere unless the output dir is set.
 // ---------------------------------------------------------------------------
 
-function main(): void {
+function main() {
   const outDir = process.env.MAKEFUN_OUTPUT_DIR;
   if (!outDir) {
     throw new Error("MAKEFUN_OUTPUT_DIR is not set");
